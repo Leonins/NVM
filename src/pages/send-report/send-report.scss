@@ -1,0 +1,16 @@
+page-send-report {
+    .toolbar-background {
+        background-color: grey;
+      }
+    .block{
+        position: relative;
+        .deleteIcon{
+            position: absolute;
+            color: #ffffff;
+            margin-left: 80%;
+        }
+        .deleteIcon:before{
+            font-size: 30px;
+        }
+    }
+}

@@ -1,0 +1,51 @@
+ion-menu{
+    img{
+        border-radius: 50%;
+        height: 100px;
+
+
+    }
+
+    .scroll-content{
+        background-color: #3f4041;
+    }
+    ion-list{
+        .item-block{
+            background: none;
+            color: color($colors, light);
+
+        }
+    }
+    .custom-avatar {
+        height: 25vw;
+         width: 25vw;
+         border: 1px solid rgb(10, 112, 138);
+        border-radius: 50%;
+         display: inline-block;
+        margin-left: 30%;
+         margin-right: 30%;
+      }
+
+      .bg-image{
+        background-image: url('../assets/img/background2.jpg');
+        background-repeat: no-repeat;
+        background-position: center;
+        background-size: contain;
+        background-size: cover;
+        height:  200px;
+      }
+        h4{
+            color: #ffffff;
+            text-align: center!important;
+
+    }
+        h5{
+            color: #ffffff;
+            text-align: center!important;
+
+        }
+}
+
+
+
+

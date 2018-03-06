@@ -1,0 +1,43 @@
+<ion-header>
+
+    <ion-navbar color="primary">
+
+        <button ion-button menuToggle icon-only>
+          <ion-icon name='menu'></ion-icon>
+        </button>
+
+        <ion-title>Fines and Penalties</ion-title>
+    </ion-navbar>
+
+</ion-header>
+
+
+<ion-content padding>
+
+  <ion-card>
+
+    <ion-card-header text-wrap>
+      <p>{{finesAndPenalties.vf_name}}</p>
+      <ion-note item-start>
+        As of {{finesAndPenalties.vf_datestarted}}
+      </ion-note>
+    </ion-card-header>
+
+    <ion-card-content>
+      <ion-row>
+        <ion-col text-wrap>
+          {{finesAndPenalties.vf_description}}
+        </ion-col>
+      </ion-row>
+
+      <ion-row>
+        <ion-col text-wrap>
+          <p>FINES</p>
+          <p>{{finesAndPenalties.vf_fines}}</p>
+        </ion-col>
+      </ion-row>
+    </ion-card-content>
+
+  </ion-card>
+
+</ion-content>

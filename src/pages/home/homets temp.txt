@@ -1,0 +1,388 @@
+import { Component, ViewChild, ElementRef } from '@angular/core';
+import { IonicPage, NavController, NavParams, App, MenuController, Platform, AlertController } from 'ionic-angular';
+import { GoogleMaps, GoogleMap, GoogleMapsEvent, Marker,GoogleMapOptions,Polygon, Poly } from '@ionic-native/google-maps';
+import { Geolocation } from '@ionic-native/geolocation';
+import { LocationAccuracy } from '@ionic-native/location-accuracy';
+import { TrafficRoadSignService } from '../../services/geofence/traffic-road-sign.service';
+import { Observable } from 'rxjs/Observable';
+import { trafficRoadSign } from '../../models/geofence/traffic-road-sign.model';
+import { LocalNotifications } from '@ionic-native/local-notifications';
+import {ToastController} from 'ionic-angular';
+import { Injectable } from '@angular/core';
+import { Cordova, Plugin, CordovaFunctionOverride, IonicNativePlugin } from '@ionic-native/core';
+
+
+import firebase from 'firebase';
+import { Geofence } from '@ionic-native/geofence';
+declare var google: any;
+declare var plugin: any;
+declare var $firebaseArray: any;
+declare var poly: any;
+@IonicPage()
+@Component({
+	selector: 'page-home',
+	templateUrl: 'home.html',
+})
+export class HomePage {
+
+	@ViewChild('map') mapRef: ElementRef;
+	trafficRoadSign$: Observable<trafficRoadSign[]>;
+
+	constructor(public navCtrl: NavController, public navParams: NavParams,
+		app: App,
+		menu: MenuController,
+		public alertCtrl: AlertController,
+		private geolocation: Geolocation,
+		private locationAccuracy: LocationAccuracy,
+		private platform: Platform,
+		private trafficSign: TrafficRoadSignService,
+		private localNotification: LocalNotifications,
+		private toastCtrl: ToastController
+	) {
+		menu.enable(true);
+		menu.swipeEnable(false);
+
+		// platform.ready().then(() => {
+		// 	console.log('OK');
+		// 	this.mapDisplay();
+		//   });
+
+		this.trafficRoadSign$ = this.trafficSign
+			.getTrafficRoadSign() // DB List
+			.snapshotChanges() // Key and Value
+			.map(changes => {
+				return changes.map(c => ({
+					key: c.payload.key,
+					...c.payload.val()
+				}));
+			});
+
+			
+	}
+	ionViewDidLoad() {
+		console.log('ionViewDidLoad');
+		this.mapDisplay();
+
+		this.localNotification.schedule({
+			id: 1,
+			title: 'TESING' ,
+			text: 'Single ILocalNotification'
+		  });
+	}
+
+	
+	getAllCatdetails() {
+		var query = firebase.database().ref('/traffic_road_sign/').orderByKey();
+		query.once("value")
+			.then(function (snapshot) {
+				snapshot.forEach(function (childSnapshot) {
+					var key = childSnapshot.key;
+					var childData = childSnapshot.val();
+					console.log('COORDS');
+					console.log(childData.road_sign_coordinates);
+
+					childData.road_sign_coordinates.forEach(function (coordinate) {
+						console.log('LAT: ' + coordinate.lat);
+						console.log('LNG: ' + coordinate.long);
+					})
+				});
+			});
+	}
+
+	mapDisplay() {
+		var polygons = [];
+		var paths = [];
+		var allShapes = [];
+		var test = [];
+		let mapDiv = document.getElementById("map_canvas");
+		let mapOptions: GoogleMapOptions = {
+			camera: {
+			  target: {
+				lat: 10.338414,
+				lng: 123.911775
+			  },
+			  zoom: 18
+			}
+		  };
+		let map = plugin.google.maps.Map.getMap(mapDiv, {
+			camera: {
+				target: {
+					lat: 10.338414,
+					lng: 123.911775
+				},
+				zoom: 18
+			}
+		});
+		var currentLocation = [];
+		this.geolocation.getCurrentPosition().then((resp) =>{
+			console.log('Lat: ' + resp.coords.latitude);
+		    console.log('Lng: ' + resp.coords.longitude);
+			currentLocation.push({ lat: resp.coords.latitude, lng: resp.coords.longitude });
+		});
+		map.addEventListener(GoogleMapsEvent.MAP_READY, function () {
+
+			map.setMyLocationEnabled(true);
+			map.setCompassEnabled(true);
+
+			
+			// Add polygon
+			var vm = this;
+			var noParking = '#ed0b0b', noJayWalking = '#0011ff', noStoppingAnytime = '#000000', towAwayZone = '#00ff00'
+				, noLoadingOrUnloading = '#FF00CE', roadblockcolor = '#fbff16';
+			var color = '';
+			console.log('displaying sulod >>>>');
+			var query = firebase.database().ref('traffic_road_sign').once("value").then(function (snapshot) {
+				snapshot.forEach(function (childSnapshot) {
+					paths = [];
+					var key = childSnapshot.key;
+					var childData = childSnapshot.val();
+					console.log('COORDS');
+					console.log(childData.road_sign_coordinates);
+					if (childData.road_sign == 'No Stopping Anytime')
+						color = noStoppingAnytime;
+					else if (childData.road_sign == 'No Jaywalking')
+						color = noJayWalking;
+					else if (childData.road_sign == 'Tow Away Zone')
+						color = towAwayZone;
+					else if (childData.road_sign == 'No Parking')
+						color = noParking;
+					else if (childData.road_sign == 'No Loading/Unloading')
+						color = noLoadingOrUnloading;
+
+					childData.road_sign_coordinates.forEach(function (coordinate) {
+						console.log('LAT: ' + coordinate.lat);
+						console.log('LNG: ' + coordinate.long);
+						//pag push sa object
+						paths.push({ lat: coordinate.lat, lng: coordinate.long });
+
+					});
+					console.log('paths array');
+					console.log(paths);
+
+					// allShapes.push({
+					// 	id: key,
+					// 	color: color,
+					// 	paths: paths
+					// });
+					polygons.push  = map.addPolygon({
+						'points': paths,
+						'strokeColor': color,
+						'strokeWidth': 5,
+						'fillColor': color
+					}, function (polygon) {
+
+						// 		// to do something...
+
+					});
+					console.log("ALL SHAPES");
+					console.log(allShapes);
+				});
+			});
+			function checkInPolygon(currentLocation, polygons) {
+				var infowindow = new google.maps.InfoWindow();
+				var html = "";
+				var checkInside = [],k = 0;
+				console.log("naa ko diri");
+				var message ="";
+					
+				// this.platform.ready().then(() => {
+
+					// get current position
+					// this.geolocation.getCurrentPosition().then(currentLocation => {
+					//   console.log('lat: ' + currentLocation.coords.latitude + ', lon: ' + currentLocation.coords.longitude);
+					// });
+			  
+					// const watch = this.geolocation.watchPosition().subscribe(currentLocation => {
+					//   console.log('lat: ' + currentLocation.coords.latitude + ', lon: ' + currentLocation.coords.longitude);
+						polygons.forEach(function (polygons){
+							checkInside[k] = Poly.containsLocation(currentLocation, polygons.points);
+							console.log(checkInside[k]);
+							if(checkInside[k] == true){
+								if(polygons.color == noParking){
+									message = "No Parking Area";
+								}else if(polygons.color == noJayWalking){
+									message = "No Jaywalking Area";
+								}else if(polygons.color == noLoadingOrUnloading){
+									message = "No Loading or Unloading";
+								}else if(polygons.color == noStoppingAnytime){
+									message = "No Stopping Anytime";
+								}else if(polygons.color == towAwayZone){
+									message = "tow Away Zone";
+								}else
+									message = "Roadblock Area";
+								console.log('check inside');
+								// Geofence.prototype.onTransitionReceived();
+								alert("You are in a "+message);
+								stop();
+
+							
+								// this.presentToast(message);
+								// this.localNotification.schedule({
+								// 	id: 2,
+								// 	title: 'TESTING',
+								// 	text: 'ni SULOD KAS FENCE'
+								//   });
+							}
+							k++;
+						});
+					// });
+			  
+					// to stop watching
+					//watch.unsubscribe();
+			  
+				//   });
+				// checkInside[k] =  Poly.containsLocation(currentLocation, polygons.points);
+				// console.log('ga tarug eskwela '+checkInside);
+				// google.maps.geometry.poly.containsLocation(currentLocation, polygons);
+				// google.maps.geometry.poly.containsLocation(currentLocation, polygons).forEach
+				// (){};
+				// console.log(checkInside);
+				// if (checkInside) {
+				// 	console.log('check inside');
+					// this.localNotification.schedule({
+					// 	id: 2,
+					// 	title: 'TESTING',
+					// 	text: 'ni SULOD KAS FENCE'
+					//   });
+					
+				// } 
+
+			  }
+
+			checkInPolygon(currentLocation, polygons);
+			// var query2 = firebase.database().ref('roadblock').once("value").then(function (snapshot) {
+			// 	snapshot.forEach(function (childDataRoadBlock) {
+			// 		paths = [];
+			// 		var key = childDataRoadBlock.key;
+			// 		var childDataRoadBlock = childDataRoadBlock.val();
+			// 		color = roadblockcolor;
+			// 		childDataRoadBlock.rb_coordinates.forEach(function (coordinate) {
+			// 			console.log('LAT: ' + coordinate.lat);
+			// 			console.log('LNG: ' + coordinate.long);
+			// 			//pag push sa object
+			// 			paths.push({ lat: coordinate.lat, lng: coordinate.long });
+
+			// 		});
+			// 		polygons.push  = map.addPolygon({
+			// 			'points': paths,
+			// 			'strokeColor': color,
+			// 			'strokeWidth': 5,
+			// 			'fillColor': color
+			// 		}, function (polygon) {
+
+			// 			// 		// to do something...
+
+			// 		});
+
+			// 	});
+			// });
+
+
+			// map.addMarker({
+			// 	lat: 10.340257292273908,
+			// 	lng: 123.91293872504798,
+			// 	draggable: true,
+			// 	fences: [polygons],
+			// 	outside: function(marker, fence) {
+			// 	  console.log('This marker has been moved outside of its fence');
+			// 	}
+			//   });
+
+		});
+	}
+	presentToast(message) {
+		let toast = this.toastCtrl.create({
+		  message: 'you are in a '+message,
+		  duration: 3000,
+		  position: 'bottom'
+		});
+	  
+		toast.onDidDismiss(() => {
+		  console.log('Dismissed toast');
+		});
+	  
+		toast.present();
+	  }
+	//=============================================================
+	// DisplayMap(){
+	// 	this.location = new google.maps.LatLng('10.338414','123.911775');
+
+	// 	this.option ={
+	// 		center:this.location,
+	// 		zoom: 15
+	// 	};
+
+	// 	this.map = new google.maps.Map(this.mapRef.nativeElement,this.option);
+
+
+	// }
+
+	askLocation() {
+		this.askPermission();
+		this.locationAccuracy.canRequest().then((canRequest: boolean) => {
+			if (canRequest) {
+				// the accuracy option will be ignored by iOS
+				this.locationAccuracy.request(this.locationAccuracy.REQUEST_PRIORITY_HIGH_ACCURACY).then(
+					// () => this.getLocation(), //console.log('Request successful'),
+					error => console.log('Error requesting location permissions', error)
+				);
+			}
+		});
+	}
+	askPermission() {
+		this.geolocation.getCurrentPosition().then((resp) => {
+			console.log('Permission Granted');
+		}).catch((error) => {
+			console.log('Error getting location', error);
+		});
+	}
+
+	// 	ref.child('traffic_road_sign').once('value').then(function(snapshot) {
+	// 		snapshot.forEach(function(userSnapshot) {
+	// 				var trs = userSnapshot.val();
+	// 				var color = '';
+
+	// 				if(trs.road_sign == 'No Stopping Anytime')
+	// 						color = noStoppingAnytime;
+	// 				else if(trs.road_sign == 'No Jaywalking')
+	// 						color = noJayWalking;
+	// 				else if(trs.road_sign == 'Tow Away Zone')
+	// 						color = towAwayZone;
+	// 				else if(trs.road_sign == 'No Parking')
+	// 						color = noParking;
+	// 				else if(trs.road_sign == 'No Loading/Unloading')
+	// 						color = noLoadingOrUnloading;
+
+	// 				// if(typeof trs.road_sign_coordinates == 'object') {
+	// 				// 		trs.road_sign_coordinates.forEach(function(coordinate) {
+	// 				// 				this.paths.push([coordinate.lat, coordinate.long]);
+	// 				// 		});
+	// 				// }
+	// 				// allShapes.push({
+	// 				// 	id: userSnapshot.key,
+	// 				// 	name: 'polygon',
+	// 				// 	color: color,
+	// 				// 	path: this.paths
+
+	// 				// });
+	// 		});
+	// 	});
+	// getLocation(){
+	// 	this.geolocation.getCurrentPosition().then((resp) => {
+	// 	   this.lat = resp.coords.latitude;
+	// 	   this.lng = resp.coords.longitude;
+	//   		console.log(resp.coords.latitude);
+	//   		console.log(resp.coords.longitude);
+
+	//   		this.location = new google.maps.LatLng(this.lat, this.lng);
+	// 		this.option ={
+	// 			center:this.location,
+	// 			zoom: 15
+	// 		};
+
+	// 		this.mapG = new google.maps.Map(this.mapRef.nativeElement,this.option);
+	// 	}).catch((error) => {
+	//   		console.log('Error getting location', error);
+	// 	});
+	// }
+}

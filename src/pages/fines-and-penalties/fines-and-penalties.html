@@ -1,0 +1,22 @@
+<ion-header>
+
+  <ion-navbar color="primary">
+  	<button ion-button menuToggle icon-only>
+      <ion-icon name='menu'></ion-icon>
+    </button>
+    <ion-title>List of Fines and Penalties</ion-title>
+  </ion-navbar>
+
+</ion-header>
+
+
+<ion-content>
+  <ion-searchbar (ionInput)='getItems($event)'></ion-searchbar>
+	<ion-list>
+    <button ion-item text-wrap [navPush]="detailPage" *ngFor="let finePenalties of finesPenalties$ | async"
+    [navParams]="{fines: finePenalties}">
+      {{finePenalties.vf_name}}
+    </button>
+	</ion-list>
+
+</ion-content>

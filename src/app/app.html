@@ -1,0 +1,65 @@
+<ion-menu [content]="content">
+  <ion-header padding class="bg-image">
+   <div *ngIf="userProfile" >
+        <img [src]="userProfile.photoURL" class="custom-avatar"/>
+      <h4>{{ userProfile.displayName }}</h4>
+      <h5>{{ userProfile.email }}</h5>
+      <hr>
+  </div>
+</ion-header>
+
+
+  <ion-content>
+    <ion-list no-lines>
+      <button menuClose ion-item *ngFor="let p of pages" (click)="openPage(p)">
+        <ion-icon item-start name="{{p.icon}}" ></ion-icon>
+        {{p.title}}
+      </button>
+      <!--
+      <button menuClose ion-item (click)="openHomePage()">
+        <ion-icon item-start name="home" ></ion-icon>
+        Home
+      </button>
+
+      <button menuClose ion-item (click) ="openGeneralNewsPage()">
+        <ion-badge item-end>10</ion-badge>
+        <ion-icon item-start name="paper" ></ion-icon>
+        General News
+      </button>
+
+      <button ion-item >
+        <ion-badge item-end>10</ion-badge>
+        <ion-icon item-start name="paper" ></ion-icon>
+        Road Blockages
+      </button>
+
+      <button menuClose ion-item (click)="openFinesAndPenaltiesPage()">
+        <ion-icon item-start name="clipboard"></ion-icon>
+        Fines and Penalties
+      </button>
+
+      <button menuClose ion-item (click)="openSendReportPage()">
+        <ion-icon item-start name="briefcase" ></ion-icon>
+        Send A Report
+      </button>
+
+      <button menuClose ion-item >
+        <ion-icon item-start name="alert" ></ion-icon>
+        Help
+      </button>
+      <button menuClose ion-item >
+        <ion-icon item-start name="book" ></ion-icon>
+        About Us
+      </button>
+
+      <button menuClose ion-item (click)="openLoginPage()">
+        <ion-icon item-start name="power" ></ion-icon>
+        Sign Out
+      </button>
+    -->
+    </ion-list>
+  </ion-content>
+</ion-menu>
+
+<!-- Disable swipe-to-go-back because it's poor UX to combine STGB with side menus -->
+<ion-nav [root]="rootPage" #content swipeBackEnabled="false"></ion-nav>
